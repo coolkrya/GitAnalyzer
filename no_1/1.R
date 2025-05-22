@@ -2,7 +2,10 @@
 
 
 library(httr)
-token <- "glpat-XxnZ25ToMcXn85S2Cud3"
+library(dotenv)
+
+dotenv::load_dot_env(file = ".env")
+token <- Sys.getenv("API_TOKEN")
 repo_id <- "69227863"
 
 

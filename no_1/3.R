@@ -4,8 +4,10 @@ library(httr)
 library(dplyr)
 library(jsonlite)
 library(stringr)
+library(dotenv)
 
-token <- "glpat-XxnZ25ToMcXn85S2Cud3"
+dotenv::load_dot_env(file = ".env")
+token <- Sys.getenv("API_TOKEN")
 repo_id <- "69227863"
 
 # Получаем список коммитов
