@@ -1,1 +1,2 @@
 # GitAnalyzer
+Instruction for GitAnalyzer
