@@ -1,5 +1,5 @@
 ---
-title: "Анализ синтетических данных коммитов"
+title: "Анализ данных коммитов"
 format:
   html:
     code-fold: false
@@ -113,3 +113,123 @@ commits_df$id <- as.character(commits_df$id)
 
 # Объединение
 full_df <- merge(diffs_df, commits_df, by.x = "commit_id", by.y = "id")
+
+# Выбираем только нужные поля (по желанию)
+full_df <- full_df %>%
+  select(
+    commit_id,
+    authored_date,
+    author_name,
+    author_email,
+    message,
+    new_path,
+    old_path,
+    lines_added,
+    lines_removed,
+    new_file,
+    renamed_file,
+    deleted_file,
+  )
+
+full_df$file_language <- case_when(
+  str_detect(full_df$new_path, "\\.py$") ~ "Python",
+  str_detect(full_df$new_path, "\\.js$") ~ "JavaScript",
+  str_detect(full_df$new_path, "\\.java$") ~ "Java",
+  str_detect(full_df$new_path, "\\.cpp$") ~ "C++",
+  str_detect(full_df$new_path, "\\.go$") ~ "Go",
+  str_detect(full_df$new_path, "\\.html$") ~ "HTML",
+  str_detect(full_df$new_path, "\\.css$") ~ "CSS",
+  str_detect(full_df$new_path, "\\.md$") ~ "Markdown",
+  TRUE ~ "Other"
+)
+
+
+
+
+df <- full_df %>%
+  filter(
+    !is.na(commit_id),
+    !is.na(authored_date),
+    !is.na(author_name),
+    !is.na(author_email),
+    !is.na(new_path)
+  ) %>%
+  mutate(
+    authored_date = ymd_hms(authored_date, quiet = TRUE)  # не выводит ворнинги
+  ) %>%
+  filter(!is.na(authored_date))
+
+
+df <- df %>%
+  mutate(authored_date = ymd_hms(authored_date)) %>%
+  arrange(new_path, authored_date)
+
+# заполняем пропуски
+df <- df %>%
+  filter(!is.na(commit_id) & !is.na(authored_date) & !is.na(author_name) & !is.na(author_email) & !is.na(new_path)) %>%
+  mutate(
+    message = if_else(is.na(message), "no message", message),
+    lines_added = replace_na(lines_added, 0),
+    lines_removed = replace_na(lines_removed, 0),
+    new_file = replace_na(new_file, FALSE),
+    renamed_file = replace_na(renamed_file, FALSE),
+    deleted_file = replace_na(deleted_file, FALSE),
+    file_language = replace_na(file_language, "unknown")
+  )
+
+df <- df %>%
+  mutate(
+    authored_date = ymd_hms(authored_date),
+    hour = hour(authored_date),
+    weekday = wday(authored_date, label = TRUE)
+  )
+
+### Первичная статистика по использованию времени для коммитов
+author_stats <- df %>% group_by(author_name, author_email) %>% summarise( commits = n(), avg_lines_added = mean(lines_added), avg_lines_removed = mean(lines_removed), most_common_lang = names(sort(table(file_language), decreasing = TRUE)[1]), common_commit_hour = round(mean(hour)), .groups = "drop" )
+
+author_stats %>%
+  kable("html") %>%
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover")) %>%
+  scroll_box(width = "100%")
+
+ggplot(df, aes(x = hour, fill = author_name)) + geom_histogram(binwidth = 1, position = "dodge") + labs(title = "Коммиты по часу суток", x = "Час", y = "Количество") + theme_minimal()
+
+### Статистика используемых языков
+ggplot(df, aes(x = file_language, fill = author_name)) + geom_bar(position = "dodge") + labs(title = "Языки в коммитах", x = "Язык", y = "Количество") + theme_minimal()
+
+
+
+### Процентаж коммитов
+
+author_share <- df %>%
+  count(author_name) %>%
+  mutate(percentage = n / sum(n) * 100)
+
+### Круговая диаграмма
+ggplot(author_share, aes(x = "", y = percentage, fill = author_name)) +
+  geom_col(width = 1) +
+  coord_polar(theta = "y") +
+  labs(title = "Коммиты по авторам (pie chart)") +
+  theme_void() +
+  theme(legend.title = element_blank())
+
+
+```
+# Общая модель isolation tree
+```{r}
+# Преобразуем дату и добавим признаки
+df <- df %>%
+  mutate(
+    authored_date = ymd_hms(authored_date),
+    hour = hour(authored_date),
+    wday = wday(authored_date, label = TRUE),
+    commit_size = lines_added + lines_removed,
+    file_language = as.factor(file_language),
+    lang_code = as.numeric(file_language)
+  ) %>%
+  filter(!is.na(author_email), !is.na(lines_added), !is.na(lines_removed))
+
+
+
+# Получаем список авторов
+authors <- unique(df$author_email)
