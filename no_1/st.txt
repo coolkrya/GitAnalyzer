@@ -1,6 +1,0 @@
-Name,Age,Score,City
-Alice,25,90,Moscow
-Bob,30,85,St. Petersburg
-Charlie,22,78,Kazan
-David,28,88,Novosibirsk
-Eve,24,92,Ekaterinburg

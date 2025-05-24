@@ -1,6 +1,10 @@
-library(tidyverse)
-library(lubridate)
 library(isotree)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(readr)
+library(purrr)
+library(tidyr)
 
 # Удаляем записи с пропусками того, что пропускать нельзя
 df <- read_csv("C:/Users/qq/PycharmProjects/pythonProject/topka/synthetic_commits.csv") %>%
@@ -77,7 +81,7 @@ df_clean$anomaly_score <- anomaly_scores
 # Отображение топ-аномалий
 top_anomalies <- df_clean %>%
   arrange(desc(anomaly_score)) %>%
-  head(10)
+  filter(anomaly_score > 0.6)
 
 print(top_anomalies)
 

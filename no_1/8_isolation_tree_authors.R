@@ -5,6 +5,7 @@ library(lubridate)
 library(ggplot2)
 library(readr)
 library(purrr)
+library(tidyr)
 
 # Загрузка данных
 df <- read_csv("C:/Users/qq/PycharmProjects/pythonProject/topka/synthetic_commits.csv") %>%
