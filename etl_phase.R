@@ -121,6 +121,19 @@ df <- df %>%
   mutate(authored_date = ymd_hms(authored_date)) %>%
   arrange(new_path, authored_date) 
 
+# добавляем язык как отдельный параметр
+df$file_language <- case_when(
+  str_detect(df$new_path, "\\.py$") ~ "Python",
+  str_detect(df$new_path, "\\.js$") ~ "JavaScript",
+  str_detect(df$new_path, "\\.java$") ~ "Java",
+  str_detect(df$new_path, "\\.cpp$") ~ "C++",
+  str_detect(df$new_path, "\\.go$") ~ "Go",
+  str_detect(df$new_path, "\\.html$") ~ "HTML",
+  str_detect(df$new_path, "\\.css$") ~ "CSS",
+  str_detect(df$new_path, "\\.md$") ~ "Markdown",
+  TRUE ~ "Other"
+)
+
 # заполняем пропуски
 df <- df %>%
   filter(!is.na(commit_id) & !is.na(authored_date) & !is.na(author_name) & !is.na(author_email) & !is.na(new_path)) %>%
@@ -141,17 +154,3 @@ df <- df %>%
     hour = hour(authored_date),
     weekday = wday(authored_date, label = TRUE)
   )
-
-df$file_language <- case_when(
-  str_detect(df$new_path, "\\.py$") ~ "Python",
-  str_detect(df$new_path, "\\.js$") ~ "JavaScript",
-  str_detect(df$new_path, "\\.java$") ~ "Java",
-  str_detect(df$new_path, "\\.cpp$") ~ "C++",
-  str_detect(df$new_path, "\\.go$") ~ "Go",
-  str_detect(df$new_path, "\\.html$") ~ "HTML",
-  str_detect(df$new_path, "\\.css$") ~ "CSS",
-  str_detect(df$new_path, "\\.md$") ~ "Markdown",
-  TRUE ~ "Other"
-)
-
-
